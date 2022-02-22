@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/agl/ed25519"
+	"golang.org/x/crypto/ed25519"
 )
 
 type Key struct {

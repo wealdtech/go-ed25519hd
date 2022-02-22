@@ -89,6 +89,7 @@ func TestDeriveKey(t *testing.T) {
 		require.Equal(t, test.err, err, fmt.Sprintf("Failed at test %d", i))
 		if test.err == nil {
 			pubKey, err := key.PublicKey()
+			fmt.Printf("**** %#x\n", key.Seed())
 			require.Nil(t, err, fmt.Sprintf("Failed at test %d", i))
 			require.Equal(t, test.pubKey, pubKey, fmt.Sprintf("Failed at test %d", i))
 		}

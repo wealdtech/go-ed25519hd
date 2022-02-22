@@ -16,7 +16,7 @@ package ed25519hd
 import (
 	"bytes"
 
-	"github.com/agl/ed25519"
+	"golang.org/x/crypto/ed25519"
 )
 
 // Keys generates the Ed25519 public and private keys given a seed and a path.
