@@ -14,16 +14,18 @@
 package ed25519hd
 
 import (
-	"errors"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 var (
+	// ErrElementTooLarge is returned when a path element is too large.
 	ErrElementTooLarge = errors.New("path element cannot be larger than 4294967295")
 
-	pathRegex = regexp.MustCompile("^m((\\/[0-9]+')|(\\/[0-9]+'){2}|((\\/[0-9]+'){3}(\\/[0-9]+){0,2}))$")
+	pathRegex = regexp.MustCompile(`^m((\/[0-9]+')|(\/[0-9]+'){2}|((\/[0-9]+'){3}(\/[0-9]+){0,2}))$`)
 )
 
 func isValidPath(path string) bool {
@@ -34,11 +36,8 @@ func isValidPath(path string) bool {
 
 	// Valid elements
 	_, err := elementsForPath(path)
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err == nil
 }
 
 func elementsForPath(path string) ([]uint32, error) {
@@ -46,16 +45,16 @@ func elementsForPath(path string) ([]uint32, error) {
 
 	results := make([]uint32, len(elements)-1)
 
-	for i, element := range elements[1:] {
+	for index, element := range elements[1:] {
 		result, err := strconv.ParseUint(strings.TrimRight(element, "'"), 10, 32)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to parse element")
 		}
 		// Result must fit in uint32
 		if result > 4294967295 {
 			return nil, ErrElementTooLarge
 		}
-		results[i] = uint32(result)
+		results[index] = uint32(result)
 	}
 
 	return results, nil

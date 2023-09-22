@@ -18,26 +18,29 @@ import (
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/binary"
-	"errors"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/ed25519"
 )
 
+// Key is an ED255-19 key.
 type Key struct {
 	key       []byte
 	chainCode []byte
 }
 
 var (
+	// ErrUnhardenedElement is returned when an element in a path is not hardened.
 	ErrUnhardenedElement = errors.New("elements must be hardened")
-	ErrInvalidPath       = errors.New("invalid path")
+	// ErrInvalidPath is returned when a path is invalid.
+	ErrInvalidPath = errors.New("invalid path")
 
 	hardenedOffset = uint32(0x80000000)
 )
 
 // MasterKeyFromSeed generates a master key given a seed.
-// The seed must be 64 bytes to be valid
+// The seed must be 64 bytes to be valid.
 func MasterKeyFromSeed(seed []byte) (*Key, error) {
 	if len(seed) != 64 {
 		return nil, fmt.Errorf("seed must be 64 bytes (passed %d)", len(seed))
@@ -46,7 +49,7 @@ func MasterKeyFromSeed(seed []byte) (*Key, error) {
 	mac := hmac.New(sha512.New, []byte("ed25519 seed"))
 	_, err := mac.Write(seed)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to write seed")
 	}
 	result := mac.Sum(nil)
 
@@ -56,26 +59,27 @@ func MasterKeyFromSeed(seed []byte) (*Key, error) {
 	}, nil
 }
 
-func deriveKey(key *Key, i uint32) (*Key, error) {
-	if i < hardenedOffset {
+func deriveKey(key *Key, index uint32) (*Key, error) {
+	if index < hardenedOffset {
 		return nil, ErrUnhardenedElement
 	}
 
 	iBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(iBytes, i)
-	tmp := append([]byte{0x0}, key.key...)
-	data := append(tmp, iBytes...)
+	binary.BigEndian.PutUint32(iBytes, index)
+	data := append([]byte{0x0}, key.key...)
+	data = append(data, iBytes...)
 
 	hmac := hmac.New(sha512.New, key.chainCode)
 	_, err := hmac.Write(data)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to write data")
 	}
 	sum := hmac.Sum(nil)
 	newKey := &Key{
 		key:       sum[0:32],
 		chainCode: sum[32:64],
 	}
+
 	return newKey, nil
 }
 
@@ -84,14 +88,16 @@ func (k *Key) PublicKey() ([]byte, error) {
 	reader := bytes.NewReader(k.key)
 	pub, _, err := ed25519.GenerateKey(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to generate key")
 	}
+
 	return pub[:], nil
 }
 
 // Seed returns a copy of the seed for a derived path.
 func (k *Key) Seed() [32]byte {
 	var seed [32]byte
-	copy(seed[:], k.key[:])
+	copy(seed[:], k.key)
+
 	return seed
 }

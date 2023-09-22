@@ -1,4 +1,4 @@
-// Copyright © 2018 Weald Technology Trading
+// Copyright © 2018, 2023 Weald Technology Trading.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package ed25519hd
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,26 +21,31 @@ import (
 
 func TestKeys(t *testing.T) {
 	type test struct {
+		name    string
 		seed    []byte
 		path    string
-		err     error
+		err     string
 		privKey []byte
 	}
 
 	tests := []test{
-		{ // 0
-			err: fmt.Errorf("invalid path"),
+		{
+			name: "Empty",
+			err:  "invalid path",
 		},
-		{ // 1
+		{
+			name: "NoSeed",
 			path: "m/44'/1901'/0'",
-			err:  fmt.Errorf("seed must be 64 bytes (passed 0)"),
+			err:  "seed must be 64 bytes (passed 0)",
 		},
-		{ // 2
+		{
+			name:    "Good",
 			seed:    _strToHex("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
 			path:    "m/44'/1901'/0'",
 			privKey: _strToHex("5027fcca089691ad5fedfb65b4d165a1991818b25cbcc995a8b17adfc85549e446d34d252e3d0e4ce90169baf62947ead31d2003488ae00fd30b4eaf0ab1965d"),
 		},
-		{ // 3
+		{
+			name: "KnownMnemonic",
 			// BIP-39 mnemonic: knife blouse guide fabric fiction dry shiver trap wrong learn paddle thunder hood version rebel bike expect magic parent foil cushion excess scout barely
 			seed:    _strToHex("ad41ba61debefb8c24557a17ea372f7a76da3fab57e4d2b27e290d6b0c6d97e37d0bcdb0c26cdb530bea74beeade30ccea00bed7fc503f185297459653cc4f33"),
 			path:    "m/44'/1901'/0'",
@@ -49,11 +53,15 @@ func TestKeys(t *testing.T) {
 		},
 	}
 
-	for i, test := range tests {
-		_, privKey, err := Keys(test.seed, test.path)
-		require.Equal(t, test.err, err, fmt.Sprintf("Failed at test %d", i))
-		if test.err == nil {
-			require.Equal(t, test.privKey, privKey, fmt.Sprintf("Failed at test %d", i))
-		}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, privKey, err := Keys(test.seed, test.path)
+			if test.err == "" {
+				require.NoError(t, err)
+				require.Equal(t, test.privKey, privKey)
+			} else {
+				require.EqualError(t, err, test.err)
+			}
+		})
 	}
 }

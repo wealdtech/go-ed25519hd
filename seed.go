@@ -3,13 +3,15 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package ed25519hd provides hierarchical derivation of ED255-19 keys.
 package ed25519hd
 
 import (
@@ -65,10 +67,11 @@ func ValidateMnemonic(mnemonic string) (bool, error) {
 	if seed.Bytes()[32] != checksum[0] {
 		return false, fmt.Errorf("invalid mnemonic checksum")
 	}
+
 	return true, nil
 }
 
-var reverseWordMap map[string]int = map[string]int{}
+var reverseWordMap = map[string]int{}
 
 func init() {
 	for i, v := range englishWordList {

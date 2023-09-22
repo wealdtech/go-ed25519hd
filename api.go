@@ -1,4 +1,4 @@
-// Copyright © 2018 Weald Technology Trading
+// Copyright © 2018 Weald Technology Trading.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package ed25519hd
 import (
 	"bytes"
 
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -30,12 +31,13 @@ func Keys(seed []byte, path string) ([]byte, []byte, error) {
 	reader := bytes.NewReader(key.key)
 	pub, priv, err := ed25519.GenerateKey(reader)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "failed to generate key")
 	}
-	return pub[:], priv[:], err
+
+	return pub[:], priv[:], nil
 }
 
-// DeriveKey derives a key given a seed and a derivation path
+// DeriveKey derives a key given a seed and a derivation path.
 func DeriveKey(seed []byte, path string) (*Key, error) {
 	if !isValidPath(path) {
 		return nil, ErrInvalidPath
@@ -52,7 +54,7 @@ func DeriveKey(seed []byte, path string) (*Key, error) {
 	}
 
 	for _, element := range elements {
-		// We operate on hardened elements
+		// We operate on hardened elements.
 		hardenedElement := element + hardenedOffset
 		key, err = deriveKey(key, hardenedElement)
 		if err != nil {
